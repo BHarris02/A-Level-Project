@@ -1,7 +1,9 @@
 package SQL;
 
+import java.util.List;
+
 public interface ISQL {
-    public boolean createTable(String tableName, String[] columnsList);
+    public boolean createTable(String tableName, List<String> columnsList);
     public String[] getColumnNames(String tableName);
     public boolean validateColumnNames(String tableName, String[] columnsList);
     public boolean insert(String tableName, String[] dataList);
