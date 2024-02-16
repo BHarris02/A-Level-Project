@@ -1,18 +1,20 @@
 package SQL;
 
-import java.sql.Connection;
-import java.sql.Statement;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SQL implements ISQL{
     private Connection connection;
+    private Statement statement;
 
     public SQL(String hostname, String user, String password, String database){
         try{
             String url = "jdbc:mysql://" + hostname + "/" + database;
             this.connection = DriverManager.getConnection(url, user, password);
+            this.statement = connection.createStatement();
         }
         catch (SQLException e){
             e.printStackTrace();
@@ -30,11 +32,10 @@ public class SQL implements ISQL{
         if(tableName.isEmpty() || columnsList.isEmpty() || columnsList.contains(""))
             return false;
         try{
-            Statement statement = this.connection.createStatement();
             StringBuilder queryBuilder = new StringBuilder();
             queryBuilder.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (id int NOT NULL AUTO_INCREMENT, ");
             queryBuilder.append(String.join(", ", columnsList)).append(", PRIMARY KEY (id))");
-            System.out.println(queryBuilder.toString());
+            //System.out.println(queryBuilder.toString());
             statement.executeUpdate(queryBuilder.toString());
             return true;
         }
@@ -44,14 +45,46 @@ public class SQL implements ISQL{
         return false;
     }
 
+    /**
+     *
+     * @param tableName - name of table to retrieve column names from
+     * @return list of column names, or null on error
+     */
     @Override
-    public String[] getColumnNames(String tableName) {
-        return new String[0];
+    public List<String> getColumnNames(String tableName) {
+        List<String> columnNames = new ArrayList<>();
+        try{
+            ResultSet results = statement.executeQuery("SELECT * FROM " + tableName);
+            ResultSetMetaData metaData = results.getMetaData();
+            int cols = metaData.getColumnCount();
+            for(int i = 1; i <= cols; i++)
+                columnNames.add(metaData.getColumnName(i));
+            results.close();
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+            return null;
+        }
+        return columnNames;
     }
 
+    /**
+     *
+     * @param tableName - name of table
+     * @param columnsList - list of columns to ensure exist
+     * @return true or false
+     */
     @Override
-    public boolean validateColumnNames(String tableName, String[] columnsList) {
-        return false;
+    public boolean validateColumnNames(String tableName, List<String> columnsList) {
+        if(columnsList.size() == 1 && columnsList.get(0).equals("*")) return true;
+        try{
+            Set<String> columnNames = new HashSet<>(getColumnNames(tableName));
+            return columnNames.containsAll(columnsList);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
