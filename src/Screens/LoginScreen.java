@@ -54,6 +54,8 @@ public class LoginScreen extends AbstractScreen {
         dispose();
         switch(type){
             case EMPLOYEE -> new EmployeeScreen("Employee");
+            case MANAGER -> new ManagerScreen("Manager");
+            case CUSTOMER -> new CustomerScreen("Customer");
         }
     }
 }
